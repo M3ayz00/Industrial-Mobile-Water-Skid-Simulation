@@ -2,7 +2,7 @@
 
 ## 📋 **Project Overview**
 
-This project simulates a real industrial water treatment plant using computer-based control systems. It demonstrates how modern factories automatically clean and purify water using sensors, pumps, filters, and UV sterilization - all controlled by a computer program.
+This project simulates a real industrial mobile water skid using computer-based control systems. It demonstrates how modern factories automatically clean and purify water using sensors, pumps, filters, and UV sterilization - all controlled by a computer program.
 
 **System Name:** Industrial Water Treatment Plant Simulation  
 **Platform:** OpenPLC Runtime with Web-based SCADA Interface  
