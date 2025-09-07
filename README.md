@@ -2,14 +2,10 @@
 
 ## 📋 **Project Overview**
 
-**System Name:** Industrial Water Treatment Plant Simulation  
-**Platform:** OpenPLC Runtime with Web-based SCADA Interface  
-# Water Treatment System - Project Documentation
-
-## Project Overview
-
 This project simulates a real industrial water treatment plant using computer-based control systems. It demonstrates how modern factories automatically clean and purify water using sensors, pumps, filters, and UV sterilization - all controlled by a computer program.
 
+**System Name:** Industrial Water Treatment Plant Simulation  
+**Platform:** OpenPLC Runtime with Web-based SCADA Interface  
 **Purpose:** Create a smart water purification system that runs itself, monitors water quality, and alerts operators when problems occur.
 **Technology Stack:** Structured Text (IEC 61131-3), Python Flask, HTML5/JavaScript  
 **Communication Protocol:** Modbus TCP/IP  
