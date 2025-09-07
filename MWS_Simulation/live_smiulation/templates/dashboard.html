@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Treatment System - OpenPLC Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .status {
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .connection-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        .connection-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .connection-controls input {
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .connection-controls input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.18);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.5);
+        }
+
+        .panel h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .system-overview {
+            grid-column: 1 / -1;
+        }
+
+        .process-flow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .equipment {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .equipment-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .equipment-icon.active {
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 20px rgba(74, 222, 128, 0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .pump { background: #3b82f6; }
+        .filter { background: #f59e0b; }
+        .uv { background: #8b5cf6; }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: #6b7280;
+            animation: flow 2s ease-in-out infinite;
+        }
+
+        @keyframes flow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .control-group h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .parameter-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+        }
+
+        .parameter-name {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .parameter-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin: 0 15px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .value-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            min-width: 40px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-ok { background: #10b981; }
+        .status-warning { background: #f59e0b; }
+        .status-error { background: #ef4444; }
+
+        .lights-panel {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .light {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            opacity: 0.5;
+        }
+
+        .light.active {
+            opacity: 1;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        .light-green { background: #10b981; color: white; }
+        .light-orange { background: #f59e0b; color: white; }
+        .light-red { background: #ef4444; color: white; }
+        .light-fault { background: #7c2d12; color: white; }
+
+        .scenario-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .connection-status.connected {
+            background: #10b981;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .alert-banner {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-banner.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .timestamp {
+            font-size: 0.9rem;
+            color: #6b7280;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 10px;
+            }
+            
+            .process-flow {
+                flex-direction: column;
+            }
+            
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .connection-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>Water Treatment System</h1>
+            <div class="status" id="systemStatus">OpenPLC Dashboard</div>
+        </div>
+
+        <div class="connection-status disconnected" id="connectionStatus">
+            🔴 Disconnected
+        </div>
+
+        <div class="alert-banner" id="alertBanner">
+            <strong>⚠️ System Alert:</strong> <span id="alertMessage"></span>
+        </div>
+
+        <!-- Connection Panel -->
+        <div class="connection-panel">
+            <h2>🔌 PLC Connection</h2>
+            <div class="connection-controls">
+                <label>Host:</label>
+                <input type="text" id="plcHost" value="localhost" placeholder="PLC IP Address">
+                <label>Port:</label>
+                <input type="number" id="plcPort" value="502" placeholder="502">
+                <button class="btn btn-primary" id="connectBtn" onclick="connectToPLC()">Connect</button>
+                <button class="btn btn-secondary" id="disconnectBtn" onclick="disconnectFromPLC()" disabled>Disconnect</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- System Overview -->
+            <div class="panel system-overview">
+                <h2>🔧 System Overview</h2>
+                <div class="process-flow">
+                    <div class="equipment">
+                        <div class="equipment-icon pump" id="pumpIcon">⛽</div>
+                        <span>Pump</span>
+                        <small id="pumpStatus">OFF</small>
+                    </div>
+                    <div class="flow-arrow">➡️</div>
+                    <div class="equipment">
+                        <div class="equipment-icon filter" id="filterIcon">🥅</div>
+                        <span>Filter</span>
+                        <small id="filterStatus">OFF</small>
+                    </div>
+                    <div class="flow-arrow">➡️</div>
+                    <div class="equipment">
+                        <div class="equipment-icon uv" id="uvIcon">☢️</div>
+                        <span>UV Reactor</span>
+                        <small id="uvStatus">OFF</small>
+                    </div>
+                </div>
+                <div class="timestamp" id="lastUpdate">Last Update: Never</div>
+            </div>
+
+            <!-- System Controls -->
+            <div class="panel">
+                <h2>System Controls</h2>
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <h3>Main Controls</h3>
+                        <button class="btn btn-primary" id="startBtn" onclick="sendCommand('start_system')" disabled>Start System</button>
+                        <button class="btn btn-danger" id="emergencyBtn" onclick="sendCommand('emergency_stop')" disabled>Emergency Stop</button>
+                        <button class="btn btn-secondary" id="resetBtn" onclick="sendCommand('reset_system')" disabled>Reset</button>
+                    </div>
+                    <div class="control-group">
+                        <h3>Test Scenarios</h3>
+                        <button class="btn btn-primary" onclick="runScenario('normal_startup')" disabled>Normal Start</button>
+                        <button class="btn btn-warning" onclick="runScenario('low_pressure')" disabled>Low Pressure</button>
+                        <button class="btn btn-warning" onclick="runScenario('high_turbidity')" disabled>High Turbidity</button>
+                        <button class="btn btn-danger" onclick="runScenario('multiple_faults')" disabled>Multiple Faults</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analog Parameters -->
+            <div class="panel">
+                <h2>Analog Parameters</h2>
+                <div class="parameter-control">
+                    <span class="parameter-name">Pressure</span>
+                    <div class="value-controls">
+                        <button class="btn btn-secondary btn-small" onclick="adjustParameter('pressure', 'down')" disabled>-</button>
+                        <span class="parameter-value" id="pressureValue">--</span>
+                        <button class="btn btn-secondary btn-small" onclick="adjustParameter('pressure', 'up')" disabled>+</button>
+                    </div>
+                    <span style="font-size: 0.9rem; color: #6b7280;">bar</span>
+                </div>
+
+                <div class="parameter-control">
+                    <span class="parameter-name">Flow Rate</span>
+                    <div class="value-controls">
+                        <button class="btn btn-secondary btn-small" onclick="adjustParameter('flow', 'down')" disabled>-</button>
+                        <span class="parameter-value" id="flowValue">--</span>
+                        <button class="btn btn-secondary btn-small" onclick="adjustParameter('flow', 'up')" disabled>+</button>
+                    </div>
+                    <span style="font-size: 0.9rem; color: #6b7280;">L/min</span>
+                </div>
+
+                <div class="parameter-control">
+                    <span class="parameter-name">Turbidity</span>
+                    <div class="value-controls">
+                        <button class="btn btn-secondary btn-small" onclick="adjustParameter('turbidity', 'down')" disabled>-</button>
+                        <span class="parameter-value" id="turbidityValue">--</span>
+                        <button class="btn btn-secondary btn-small" onclick="adjustParameter('turbidity', 'up')" disabled>+</button>
+                    </div>
+                    <span style="font-size: 0.9rem; color: #6b7280;">NTU</span>
+                </div>
+
+                <div class="parameter-control">
+                    <span class="parameter-name">Water Level</span>
+                    <div class="value-controls">
+                        <button class="btn btn-secondary btn-small" onclick="adjustParameter('level', 'down')" disabled>-</button>
+                        <span class="parameter-value" id="levelValue">--</span>
+                        <button class="btn btn-secondary btn-small" onclick="adjustParameter('level', 'up')" disabled>+</button>
+                    </div>
+                    <span style="font-size: 0.9rem; color: #6b7280;">%</span>
+                </div>
+            </div>
+
+            <!-- Status Lights -->
+            <div class="panel">
+                <h2>Status Lights</h2>
+                <div class="lights-panel">
+                    <div class="light light-green" id="greenLight">
+                        <div>🟢 Green</div>
+                        <small>Pump Running</small>
+                    </div>
+                    <div class="light light-orange" id="orangeLight">
+                        <div>🟠 Orange</div>
+                        <small>Filter Active</small>
+                    </div>
+                    <div class="light light-red" id="redLight">
+                        <div>🔴 Red</div>
+                        <small>UV Active</small>
+                    </div>
+                    <div class="light light-fault" id="faultLight">
+                        <div>🚨 Fault</div>
+                        <small>System Error</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO for real-time communication -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Global variables
+        let socket = null;
+        let connected = false;
+        let plcConnected = false;
+
+        // Initialize WebSocket connection
+        function initializeWebSocket() {
+            socket = io();
+
+            socket.on('connect', function() {
+                console.log('Connected to server');
+                connected = true;
+            });
+
+            socket.on('disconnect', function() {
+                console.log('Disconnected from server');
+                connected = false;
+                updateConnectionStatus(false);
+            });
+
+            socket.on('plc_data', function(data) {
+                updateDashboard(data);
+            });
+
+            socket.on('error', function(data) {
+                showAlert(data.message);
+            });
+
+            socket.on('command_result', function(data) {
+                if (!data.success) {
+                    showAlert('Command failed: ' + (data.error || 'Unknown error'));
+                }
+            });
+        }
+
+        // Connect to PLC
+        async function connectToPLC() {
+            const host = document.getElementById('plcHost').value;
+            const port = parseInt(document.getElementById('plcPort').value);
+
+            try {
+                const response = await fetch('/api/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ host: host, port: port })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    plcConnected = true;
+                    updateConnectionStatus(true);
+                    enableControls(true);
+                    showAlert('Connected to PLC successfully', 'success');
+                } else {
+                    showAlert('Failed to connect: ' + result.message);
+                }
+            } catch (error) {
+                showAlert('Connection error: ' + error.message);
+            }
+        }
+
+        // Disconnect from PLC
+        async function disconnectFromPLC() {
+            try {
+                const response = await fetch('/api/disconnect', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                plcConnected = false;
+                updateConnectionStatus(false);
+                enableControls(false);
+                clearDashboard();
+                showAlert('Disconnected from PLC', 'info');
+            } catch (error) {
+                showAlert('Disconnect error: ' + error.message);
+            }
+        }
+
+        // Send command to PLC
+        function sendCommand(command) {
+            if (socket && plcConnected) {
+                socket.emit('plc_command', { command: command });
+            }
+        }
+
+        // Adjust parameter
+        function adjustParameter(parameter, direction) {
+            if (socket && plcConnected) {
+                socket.emit('plc_command', {
+                    command: 'adjust_parameter',
+                    parameter: parameter,
+                    direction: direction
+                });
+            }
+        }
+
+        // Run scenario
+        async function runScenario(scenario) {
+            try {
+                const response = await fetch('/api/control', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'scenario',
+                        scenario: scenario
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(`Running scenario: ${scenario}`, 'success');
+                } else {
+                    showAlert('Scenario failed: ' + result.message);
+                }
+            } catch (error) {
+                showAlert('Error running scenario: ' + error.message);
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(isConnected) {
+            const statusEl = document.getElementById('connectionStatus');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+
+            if (isConnected) {
+                statusEl.className = 'connection-status connected';
+                statusEl.innerHTML = '🟢 Connected';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                statusEl.innerHTML = '🔴 Disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        // Enable/disable controls
+        function enableControls(enable) {
+            const buttons = document.querySelectorAll('button:not(#connectBtn):not(#disconnectBtn)');
+            buttons.forEach(btn => {
+                btn.disabled = !enable;
+            });
+        }
+
+        // Update dashboard with real data
+        function updateDashboard(data) {
+            if (!data.coils && !data.registers) return;
+
+            const timestamp = new Date(data.timestamp).toLocaleTimeString();
+            document.getElementById('lastUpdate').textContent = `Last Update: ${timestamp}`;
+
+            // Update analog values
+            if (data.registers) {
+                document.getElementById('pressureValue').textContent = data.registers.pressure_value || '--';
+                document.getElementById('flowValue').textContent = data.registers.flow_value || '--';
+                document.getElementById('turbidityValue').textContent = data.registers.turbidity_value || '--';
+                document.getElementById('levelValue').textContent = data.registers.water_level || '--';
+            }
+
+            // Update equipment status
+            if (data.coils) {
+                updateEquipmentStatus('pump', data.coils.pump);
+                updateEquipmentStatus('filter', data.coils.filter);
+                updateEquipmentStatus('uv', data.coils.uv_reactor);
+
+                // Update lights
+                updateLight('greenLight', data.coils.green_light);
+                updateLight('orangeLight', data.coils.orange_light);
+                updateLight('redLight', data.coils.red_light);
+                updateLight('faultLight', data.coils.fault_light);
+            }
+
+            // Show alerts
+            if (data.alerts && data.alerts.length > 0) {
+                showAlert(data.alerts.join(', '));
+            } else {
+                hideAlert();
+            }
+        }
+
+        // Update equipment status
+        function updateEquipmentStatus(equipment, active) {
+            const iconId = equipment + 'Icon';
+            const statusId = equipment + 'Status';
+            
+            const icon = document.getElementById(iconId);
+            const status = document.getElementById(statusId);
+            
+            if (icon && status) {
+                if (active) {
+                    icon.classList.add('active');
+                    status.textContent = 'ON';
+                    status.style.color = '#10b981';
+                } else {
+                    icon.classList.remove('active');
+                    status.textContent = 'OFF';
+                    status.style.color = '#6b7280';
+                }
+            }
+        }
+
+        // Update light status
+        function updateLight(lightId, active) {
+            const light = document.getElementById(lightId);
+            if (light) {
+                if (active) {
+                    light.classList.add('active');
+                } else {
+                    light.classList.remove('active');
+                }
+            }
+        }
+
+        // Show alert
+        function showAlert(message, type = 'error') {
+            const banner = document.getElementById('alertBanner');
+            const messageEl = document.getElementById('alertMessage');
+            
+            if (banner && messageEl) {
+                messageEl.textContent = message;
+                banner.classList.add('show');
+
+                if (type === 'success') {
+                    banner.style.background = '#f0fdf4';
+                    banner.style.borderColor = '#bbf7d0';
+                    banner.style.color = '#166534';
+                } else if (type === 'info') {
+                    banner.style.background = '#eff6ff';
+                    banner.style.borderColor = '#bfdbfe';
+                    banner.style.color = '#1d4ed8';
+                } else {
+                    banner.style.background = '#fef2f2';
+                    banner.style.borderColor = '#fecaca';
+                    banner.style.color = '#991b1b';
+                }
+
+                // Auto-hide success and info messages
+                if (type === 'success' || type === 'info') {
+                    setTimeout(() => hideAlert(), 3000);
+                }
+            }
+        }
+
+        // Hide alert
+        function hideAlert() {
+            const banner = document.getElementById('alertBanner');
+            if (banner) {
+                banner.classList.remove('show');
+            }
+        }
+
+        // Clear dashboard
+        function clearDashboard() {
+            document.getElementById('pressureValue').textContent = '--';
+            document.getElementById('flowValue').textContent = '--';
+            document.getElementById('turbidityValue').textContent = '--';
+            document.getElementById('levelValue').textContent = '--';
+            document.getElementById('lastUpdate').textContent = 'Last Update: Never';
+
+            // Clear equipment status
+            ['pump', 'filter', 'uv'].forEach(equipment => {
+                updateEquipmentStatus(equipment, false);
+            });
+
+            // Clear lights
+            ['greenLight', 'orangeLight', 'redLight', 'faultLight'].forEach(light => {
+                updateLight(light, false);
+            });
+
+            hideAlert();
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            initializeWebSocket();
+            enableControls(false);
+            console.log('Dashboard initialized');
+        });
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && socket && !socket.connected) {
+                // Reconnect when page becomes visible
+                socket.connect();
+            }
+        });
+    </script>
+</body>
+</html>
